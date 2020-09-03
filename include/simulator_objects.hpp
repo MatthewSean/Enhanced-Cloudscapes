@@ -53,9 +53,12 @@ namespace simulator_objects
 	extern float fade_end_distance;
 
 	extern glm::vec3 sun_direction;
+	extern glm::vec3 moon_direction;
 
 	extern glm::vec3 sun_tint;
 	extern float sun_gain;
+	extern float moon_gain;
+	extern float moon_glow;
 
 	extern glm::vec3 ambient_tint;
 	extern float ambient_gain;

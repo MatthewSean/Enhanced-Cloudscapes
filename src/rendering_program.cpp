@@ -46,9 +46,12 @@ namespace rendering_program
 	GLint fade_end_distance;
 
 	GLint sun_direction;
+	GLint moon_direction;
 
 	GLint sun_tint;
 	GLint sun_gain;
+	GLint moon_gain;
+	GLint moon_glow;
 
 	GLint ambient_tint;
 	GLint ambient_gain;
@@ -125,9 +128,12 @@ namespace rendering_program
 		fade_end_distance = glGetUniformLocation(reference, "fade_end_distance");
 
 		sun_direction = glGetUniformLocation(reference, "sun_direction");
+		moon_direction = glGetUniformLocation(reference, "moon_direction");
 
 		sun_tint = glGetUniformLocation(reference, "sun_tint");
 		sun_gain = glGetUniformLocation(reference, "sun_gain");
+		moon_gain = glGetUniformLocation(reference, "moon_gain");
+		moon_glow = glGetUniformLocation(reference, "moon_glow");
 
 		ambient_tint = glGetUniformLocation(reference, "ambient_tint");
 		ambient_gain = glGetUniformLocation(reference, "ambient_gain");
@@ -213,9 +219,12 @@ namespace rendering_program
 		glUniform1f(fade_end_distance, simulator_objects::fade_end_distance);
 
 		glUniform3fv(sun_direction, 1, glm::value_ptr(simulator_objects::sun_direction));
+		glUniform3fv(moon_direction, 1, glm::value_ptr(simulator_objects::moon_direction));
 
 		glUniform3fv(sun_tint, 1, glm::value_ptr(simulator_objects::sun_tint));
 		glUniform1f(sun_gain, simulator_objects::sun_gain);
+		glUniform1f(moon_gain, simulator_objects::moon_gain);
+		glUniform1f(moon_glow, simulator_objects::moon_glow);
 
 		glUniform3fv(ambient_tint, 1, glm::value_ptr(simulator_objects::ambient_tint));
 		glUniform1f(ambient_gain, simulator_objects::ambient_gain);

@@ -3,10 +3,11 @@
 #define EARTH_RADIUS 6378100.0
 #define EARTH_CENTER vec3(0.0, -1.0 * EARTH_RADIUS, 0.0)
 
-#define SAMPLE_STEP_COUNT 64
+#define SAMPLE_STEP_COUNT 32
 #define SUN_STEP_COUNT 6
+#define MOON_STEP_COUNT 3
 
-#define MAXIMUM_SAMPLE_STEP_SIZE 100.0
+#define MAXIMUM_SAMPLE_STEP_SIZE 128.0
 
 #define CLOUD_LAYER_COUNT 3
 #define CLOUD_TYPE_COUNT 5
@@ -62,9 +63,12 @@ uniform float fade_start_distance;
 uniform float fade_end_distance;
 
 uniform vec3 sun_direction;
+uniform vec3 moon_direction;
 
 uniform vec3 sun_tint;
 uniform float sun_gain;
+uniform float moon_gain;
+uniform float moon_glow;
 
 uniform vec3 ambient_tint;
 uniform float ambient_gain;
@@ -220,9 +224,33 @@ float sun_ray_march(in float input_transmittance, in vec3 ray_position, in int c
 			float cloud_sample = sample_clouds(current_ray_position, cloud_layer_index);
 
 			output_transmittance *= exp(-1.0 * cloud_sample * step_size);
-			if (output_transmittance < 0.01) break;
+			if (output_transmittance < 0.05) break;
 
 			current_ray_position += sun_direction * step_size;
+		}
+	}
+
+	return output_transmittance;
+}
+
+float moon_ray_march(in float input_transmittance, in vec3 ray_position, in int cloud_layer_index)
+{
+	float output_transmittance = input_transmittance;
+
+	if (cloud_types[cloud_layer_index] != 0)
+	{
+		float step_size = (cloud_tops[cloud_layer_index] - ray_position.y) / MOON_STEP_COUNT;
+
+		vec3 current_ray_position = ray_position;
+
+		for (int step_index = 0; step_index < MOON_STEP_COUNT; step_index++)
+		{
+			float cloud_sample = sample_clouds(current_ray_position, cloud_layer_index);
+
+			output_transmittance *= exp(-1.0 * cloud_sample * step_size);
+			if (output_transmittance < 0.01) break;
+
+			current_ray_position += moon_direction * step_size;
 		}
 	}
 
@@ -247,9 +275,14 @@ vec4 sample_ray_march(in vec4 input_color, in int cloud_layer_index)
 			float step_size = min(layer_intersections.y / SAMPLE_STEP_COUNT, MAXIMUM_SAMPLE_STEP_SIZE);
 
 			float sun_angle_multiplier = map(sun_direction.y, 0.05, -0.125, 1.0, 0.125);
+			float moon_angle_multiplier = map(moon_direction.y, 0.05, -0.125, 1.0, 0.125);
 
 			float sun_dot_angle = dot(ray_direction, sun_direction);
-			float mie_scattering_gain = clamp(mix(henyey_greenstein(sun_dot_angle, forward_mie_scattering), henyey_greenstein(sun_dot_angle, -1.0 * backward_mie_scattering), 0.5), 1.0, 2.5);
+			float moon_dot_angle = dot(ray_direction, moon_direction);
+			float mie_scattering_gain_sun = clamp(mix(henyey_greenstein(sun_dot_angle, forward_mie_scattering), henyey_greenstein(sun_dot_angle, -1.0 * backward_mie_scattering), 0.5), 1.0, 2.5);
+			float mie_scattering_gain_moon = clamp(mix(henyey_greenstein(moon_dot_angle, forward_mie_scattering), henyey_greenstein(moon_dot_angle, backward_mie_scattering), 0.5), 1.0, 2.5);
+
+			float mie_scattering_gain = clamp(mix(mie_scattering_gain_sun, mie_scattering_gain_moon, 0.5), 1.0, 2.5);
 
 			while (current_ray_distance <= layer_intersections.y)
 			{
@@ -266,13 +299,16 @@ vec4 sample_ray_march(in vec4 input_color, in int cloud_layer_index)
 
 				if (cloud_sample != 0.0)
 				{
-					float light_attenuation = 1.0;
-					for (int current_layer_index = cloud_layer_index; current_layer_index < CLOUD_LAYER_COUNT; current_layer_index++) light_attenuation = sun_ray_march(light_attenuation, current_ray_position + (ray_layer_intersections(current_ray_position, sun_direction, current_layer_index).x * sun_direction), current_layer_index);
+					float sun_attenuation = 1.0;
+					for (int current_layer_index = cloud_layer_index; current_layer_index < CLOUD_LAYER_COUNT; current_layer_index++) sun_attenuation = sun_ray_march(sun_attenuation, current_ray_position + (ray_layer_intersections(current_ray_position, sun_direction, current_layer_index).x * sun_direction), current_layer_index);
+					float moon_attenuation = 1.0;
+					for (int current_layer_index = cloud_layer_index; current_layer_index < CLOUD_LAYER_COUNT; current_layer_index++) moon_attenuation = moon_ray_march(moon_attenuation, current_ray_position + (ray_layer_intersections(current_ray_position, moon_direction, current_layer_index).x * moon_direction), current_layer_index);
 
-					vec3 sun_color = sun_tint * sun_gain * mie_scattering_gain * light_attenuation * sun_angle_multiplier;
+					vec3 sun_color = sun_tint * sun_gain * mie_scattering_gain * sun_attenuation * sun_angle_multiplier;
+					vec3 moon_color = sun_tint * moon_gain / moon_glow * mie_scattering_gain * moon_attenuation * moon_angle_multiplier;
 					vec3 ambient_color = mix(ambient_tint, mix(atmosphere_bottom_tint, atmosphere_top_tint, get_height_ratio(current_ray_position, cloud_layer_index)) * dot(ambient_tint, vec3(0.21, 0.72, 0.07)), atmospheric_blending) * ambient_gain * sun_angle_multiplier;
 
-					vec3 sample_color = (ambient_color + sun_color) * cloud_sample * current_step_size;
+					vec3 sample_color = (ambient_color + sun_color + moon_color) * cloud_sample * current_step_size;
 					float sample_transmittance = exp(-1.0 * cloud_sample * current_step_size);
 
 					output_color.xyz += sample_color * output_color.w;
@@ -302,14 +338,19 @@ vec4 render_clouds()
 	vec3 world_intersection = get_world_intersection();
 
 	float shadow_attenuation = 1.0;
-	for (int cloud_layer_index = get_first_higher_layer(world_intersection); cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++) shadow_attenuation = sun_ray_march(shadow_attenuation, world_intersection + (ray_layer_intersections(world_intersection, sun_direction, cloud_layer_index).x * sun_direction), cloud_layer_index);
+	float shadow_attenuation_sun = 1.0;
+	float shadow_attenuation_moon = 1.0;
+	for (int cloud_layer_index = get_first_higher_layer(world_intersection); cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++) shadow_attenuation_sun = sun_ray_march(shadow_attenuation, world_intersection + (ray_layer_intersections(world_intersection, sun_direction, cloud_layer_index).x * sun_direction), cloud_layer_index);
+	for (int cloud_layer_index = get_first_higher_layer(world_intersection); cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++) shadow_attenuation_moon = moon_ray_march(shadow_attenuation, world_intersection + (ray_layer_intersections(world_intersection, moon_direction, cloud_layer_index).x * moon_direction), cloud_layer_index);
+
+	shadow_attenuation = clamp(mix(shadow_attenuation_sun, shadow_attenuation_moon, 0.0), 1.0, 2.5);
 
 	output_color.xyz = mix(output_color.xyz, 0.05 * atmosphere_bottom_tint, output_color.w * (1.0 - shadow_attenuation));
 	output_color.w *= map(shadow_attenuation, 0.0, 1.0, 0.25, 1.0);
 
 	output_color.w = 1.0 - output_color.w;
 	output_color.xyz /= output_color.w;
-
+	
 	return output_color;
 }
 
@@ -317,4 +358,5 @@ void main()
 {
 	if ((skip_fragments != 0) && ((frame_index % 2) == (int(gl_FragCoord.x) % 2))) fragment_color = texture(rendering_texture, fullscreen_texture_position);
 	else fragment_color = render_clouds();
+
 }

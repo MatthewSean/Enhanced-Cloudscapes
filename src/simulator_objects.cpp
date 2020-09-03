@@ -57,12 +57,16 @@ namespace simulator_objects
 	
 	XPLMDataRef sun_pitch_dataref;
 	XPLMDataRef sun_heading_dataref;
+	XPLMDataRef moon_pitch_dataref;
+	XPLMDataRef moon_heading_dataref;
 
 	XPLMDataRef sun_tint_red_dataref;
 	XPLMDataRef sun_tint_green_dataref;
 	XPLMDataRef sun_tint_blue_dataref;
 
 	XPLMDataRef sun_gain_dataref;
+	XPLMDataRef moon_gain_dataref;
+	XPLMDataRef moon_glow_dataref;
 
 	XPLMDataRef ambient_tint_red_dataref;
 	XPLMDataRef ambient_tint_green_dataref;
@@ -127,9 +131,12 @@ namespace simulator_objects
 	float fade_end_distance;
 
 	glm::vec3 sun_direction;
+	glm::vec3 moon_direction;
 
 	glm::vec3 sun_tint;
 	float sun_gain;
+	float moon_gain;
+	float moon_glow;
 
 	glm::vec3 ambient_tint;
 	float ambient_gain;
@@ -222,8 +229,13 @@ namespace simulator_objects
 
 		sun_pitch_dataref = XPLMFindDataRef("sim/graphics/scenery/sun_pitch_degrees");
 		sun_heading_dataref = XPLMFindDataRef("sim/graphics/scenery/sun_heading_degrees");
+		moon_pitch_dataref = XPLMFindDataRef("sim/graphics/scenery/moon_pitch_degrees");
+		moon_heading_dataref = XPLMFindDataRef("sim/graphics/scenery/moon_heading_degrees");
 
 		sun_gain_dataref = export_float_dataref("enhanced_cloudscapes/sun_gain", 2.5f);
+		
+		moon_gain_dataref = export_float_dataref("enhanced_cloudscapes/moon_gain", 15.0f);
+		moon_glow_dataref = export_float_dataref("enhanced_cloudscapes/moon_glow", 0.6f);
 
 		ambient_tint_red_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_r");
 		ambient_tint_green_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_g");
@@ -362,8 +374,11 @@ namespace simulator_objects
 
 		float sun_pitch = glm::radians(XPLMGetDataf(sun_pitch_dataref));
 		float sun_heading = glm::radians(XPLMGetDataf(sun_heading_dataref));
+		float moon_pitch = glm::radians(XPLMGetDataf(moon_pitch_dataref));
+		float moon_heading = glm::radians(XPLMGetDataf(moon_heading_dataref));
 
 		sun_direction = glm::vec3(glm::cos(sun_pitch) * glm::sin(sun_heading), glm::sin(sun_pitch), -1.0f * glm::cos(sun_pitch) * glm::cos(sun_heading));
+		moon_direction = glm::vec3(glm::cos(moon_pitch) * glm::sin(moon_heading), glm::sin(moon_pitch), -1.0f * glm::cos(moon_pitch) * glm::cos(moon_heading));
 
 		sun_tint_red_dataref = XPLMFindDataRef("sim/private/stats/skyc/sun_dir_r");
 		sun_tint_green_dataref = XPLMFindDataRef("sim/private/stats/skyc/sun_dir_g");
@@ -371,6 +386,8 @@ namespace simulator_objects
 
 		sun_tint = glm::vec3(XPLMGetDataf(sun_tint_red_dataref), XPLMGetDataf(sun_tint_green_dataref), XPLMGetDataf(sun_tint_blue_dataref));
 		sun_gain = XPLMGetDataf(sun_gain_dataref);
+		moon_gain = XPLMGetDataf(moon_gain_dataref);
+		moon_glow = XPLMGetDataf(moon_glow_dataref);
 
 		ambient_tint = glm::vec3(XPLMGetDataf(ambient_tint_red_dataref), XPLMGetDataf(ambient_tint_green_dataref), XPLMGetDataf(ambient_tint_blue_dataref));
 		ambient_gain = XPLMGetDataf(ambient_gain_dataref);
