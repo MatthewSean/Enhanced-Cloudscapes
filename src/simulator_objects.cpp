@@ -77,6 +77,9 @@ namespace simulator_objects
 	XPLMDataRef atmosphere_top_tint_dataref;
 
 	XPLMDataRef atmospheric_blending_dataref;
+	
+	XPLMDataRef fog_be_gone_dataref;
+	XPLMDataRef bicubic_sampling_dataref;
 
 	float previous_zulu_time;
 	float current_zulu_time;
@@ -138,6 +141,8 @@ namespace simulator_objects
 	glm::vec3 atmosphere_top_tint;
 
 	float atmospheric_blending;
+	float fog_be_gone;
+	int bicubic_sampling;
 
 	void initialize()
 	{
@@ -150,7 +155,7 @@ namespace simulator_objects
 		viewport_dataref = XPLMFindDataRef("sim/graphics/view/viewport");
 		current_eye_dataref = XPLMFindDataRef("sim/graphics/view/draw_call_type");
 
-		rendering_resolution_ratio_dataref = export_float_dataref("enhanced_cloudscapes/rendering_resolution_ratio", 0.5);
+		rendering_resolution_ratio_dataref = export_float_dataref("enhanced_cloudscapes/rendering_resolution_ratio", 0.75f);
 		skip_fragments_dataref = export_int_dataref("enhanced_cloudscapes/skip_fragments", 0);
 
 		reverse_z_dataref = XPLMFindDataRef("sim/graphics/view/is_reverse_float_z");
@@ -232,7 +237,13 @@ namespace simulator_objects
 		atmosphere_bottom_tint_dataref = export_vec3_dataref("enhanced_cloudscapes/atmosphere_bottom_tint", glm::vec3(0.55f, 0.775f, 1.0f));
 		atmosphere_top_tint_dataref = export_vec3_dataref("enhanced_cloudscapes/atmosphere_top_tint", glm::vec3(0.45f, 0.675f, 1.0f));
 
-		atmospheric_blending_dataref = export_float_dataref("enhanced_cloudscapes/atmospheric_blending", 0.65f);
+		atmospheric_blending_dataref = export_float_dataref("enhanced_cloudscapes/atmospheric_blending", 0.45f);
+
+		bicubic_sampling_dataref = export_int_dataref("enhanced_cloudscapes/bicubic_sampling", 0);
+
+		fog_be_gone_dataref = XPLMFindDataRef("sim/private/controls/fog/fog_be_gone");
+		XPLMSetDataf(fog_be_gone_dataref, 0.25f);
+
 	}
 
 	void update()
@@ -371,5 +382,7 @@ namespace simulator_objects
 		XPLMGetDatavf(atmosphere_top_tint_dataref, glm::value_ptr(atmosphere_top_tint), 0, atmosphere_top_tint.length());
 
 		atmospheric_blending = XPLMGetDataf(atmospheric_blending_dataref);
+		bicubic_sampling = XPLMGetDatai(bicubic_sampling_dataref);
+
 	}
 }

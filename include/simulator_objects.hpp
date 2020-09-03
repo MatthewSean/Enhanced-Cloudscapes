@@ -67,7 +67,9 @@ namespace simulator_objects
 	extern glm::vec3 atmosphere_top_tint;
 
 	extern float atmospheric_blending;
-
+	extern float fog_be_gone;
+	extern int bicubic_sampling;
+	
 	void initialize();
 	void update();
 }

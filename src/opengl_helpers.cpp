@@ -34,14 +34,14 @@ GLenum get_texture_format(png_byte color_type)
 {
 	switch (color_type)
 	{
-		case PNG_COLOR_TYPE_GRAY:
-			return GL_RED;
-		case PNG_COLOR_TYPE_GRAY_ALPHA:
-			return GL_RG;
-		case PNG_COLOR_TYPE_RGB:
-			return GL_RGB;
-		case PNG_COLOR_TYPE_RGB_ALPHA:
-			return GL_RGBA;
+	case PNG_COLOR_TYPE_GRAY:
+		return GL_RED;
+	case PNG_COLOR_TYPE_GRAY_ALPHA:
+		return GL_RG;
+	case PNG_COLOR_TYPE_RGB:
+		return GL_RGB;
+	case PNG_COLOR_TYPE_RGB_ALPHA:
+		return GL_RGBA;
 	}
 }
 
@@ -63,6 +63,22 @@ int create_fullscreen_texture()
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	XPLMBindTexture2d(EMPTY_OBJECT, 0);
+
+	return texture_reference;
+}
+
+int create_fullscreen_texture_nearest() 
+{
+	int texture_reference;
+	XPLMGenerateTextureNumbers(&texture_reference, 1);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture_reference);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	XPLMBindTexture2d(EMPTY_OBJECT, 0);
 

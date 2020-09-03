@@ -12,6 +12,7 @@ namespace post_processing_program
 	GLuint reference;
 
 	GLint near_clip_z;
+	GLint bicubic_sampling;
 
 	void initialize()
 	{
@@ -25,6 +26,7 @@ namespace post_processing_program
 		glUniform1i(rendering_texture, 0);
 
 		near_clip_z = glGetUniformLocation(reference, "near_clip_z");
+		bicubic_sampling = glGetUniformLocation(reference, "bicubic_sampling");
 
 		glUseProgram(EMPTY_OBJECT);
 	}
@@ -41,6 +43,7 @@ namespace post_processing_program
 		glBindTexture(GL_TEXTURE_2D, plugin_objects::rendering_texture);
 
 		glUniform1f(near_clip_z, simulator_objects::near_clip_z);
+		glUniform1i(bicubic_sampling, simulator_objects::bicubic_sampling);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -50,5 +53,7 @@ namespace post_processing_program
 		glBindVertexArray(EMPTY_OBJECT);
 
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		glBlendEquation(GL_FUNC_ADD);
+
 	}
 }

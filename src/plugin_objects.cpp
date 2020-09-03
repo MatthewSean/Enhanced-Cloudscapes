@@ -7,6 +7,7 @@
 namespace plugin_objects
 {
 	int depth_texture;
+	int rendering_texture;
 
 	int cloud_map_textures[CLOUD_LAYER_COUNT];
 
@@ -15,14 +16,16 @@ namespace plugin_objects
 
 	int blue_noise_texture;
 
-	int rendering_texture;
-
 	GLuint framebuffer;
 	GLuint vertex_array;
 
 	void initialize()
 	{
-		depth_texture = create_fullscreen_texture();
+		//do nearest sample, not linear, as it removed some of the edge issues..
+		//But does make the edge aa look bad.
+		//Added bicubic sample to the post_p shader.
+		depth_texture = create_fullscreen_texture_nearest();
+		rendering_texture = create_fullscreen_texture_nearest();
 
 		cloud_map_textures[0] = load_png_texture("Resources/plugins/Enhanced Cloudscapes/textures/cloud_map_1.png", false);
 		cloud_map_textures[1] = load_png_texture("Resources/plugins/Enhanced Cloudscapes/textures/cloud_map_2.png", false);
@@ -32,8 +35,6 @@ namespace plugin_objects
 		detail_noise_texture = load_png_texture("Resources/plugins/Enhanced Cloudscapes/textures/detail_noise.png", true);
 
 		blue_noise_texture = load_png_texture("Resources/plugins/Enhanced Cloudscapes/textures/blue_noise.png", false);
-
-		rendering_texture = create_fullscreen_texture();
 
 		GLint previous_framebuffer;
 		glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previous_framebuffer);
@@ -85,11 +86,22 @@ namespace plugin_objects
 			glBindTexture(GL_TEXTURE_2D, depth_texture);
 
 			GLenum depth_format;
+			GLenum depth_type;
 
-			if (simulator_objects::reverse_z == 0) depth_format = GL_DEPTH_COMPONENT24;
-			else depth_format = GL_DEPTH_COMPONENT32F;
-
-			glCopyTexImage2D(GL_TEXTURE_2D, 0, depth_format, simulator_objects::current_viewport.x, simulator_objects::current_viewport.y, simulator_objects::current_viewport.z, simulator_objects::current_viewport.w, 0);
+			if (simulator_objects::reverse_z == 0)
+			{
+			depth_format = GL_DEPTH_COMPONENT24;
+			depth_type = GL_FLOAT;
+			glDepthFunc(GL_LEQUAL);		//As per SDK
+			}
+			else
+			{
+			depth_format = GL_DEPTH_COMPONENT32F;
+			depth_type = GL_FLOAT;
+			glDepthFunc(GL_GEQUAL);		//As per SDK
+			}
+			//create texture before copytexsubimage to it, as copying depthbuffer didn't work.
+			glTexImage2D(GL_TEXTURE_2D, 0, depth_format, simulator_objects::current_viewport.z, simulator_objects::current_viewport.w, 0, GL_DEPTH_COMPONENT, depth_type, nullptr);
 		}
 		else
 		{
@@ -102,7 +114,6 @@ namespace plugin_objects
 			glBindTexture(GL_TEXTURE_2D, rendering_texture);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, simulator_objects::current_rendering_resolution.x, simulator_objects::current_rendering_resolution.y, 0, GL_RGBA, GL_FLOAT, nullptr);
 		}
-
 		XPLMBindTexture2d(EMPTY_OBJECT, 0);
 	}
 }

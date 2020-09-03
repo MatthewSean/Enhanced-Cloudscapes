@@ -231,16 +231,12 @@ namespace rendering_program
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		XPLMBindTexture2d(EMPTY_OBJECT, 0);
-
 		XPLMBindTexture2d(EMPTY_OBJECT, 1);
 		XPLMBindTexture2d(EMPTY_OBJECT, 2);
 		XPLMBindTexture2d(EMPTY_OBJECT, 3);
-
 		XPLMBindTexture2d(EMPTY_OBJECT, 4);
 		XPLMBindTexture2d(EMPTY_OBJECT, 5);
-
 		XPLMBindTexture2d(EMPTY_OBJECT, 6);
-
 		XPLMBindTexture2d(EMPTY_OBJECT, 7);
 
 		glUseProgram(EMPTY_OBJECT);
