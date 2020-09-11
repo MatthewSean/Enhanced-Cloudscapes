@@ -162,7 +162,7 @@ namespace simulator_objects
 		viewport_dataref = XPLMFindDataRef("sim/graphics/view/viewport");
 		current_eye_dataref = XPLMFindDataRef("sim/graphics/view/draw_call_type");
 
-		rendering_resolution_ratio_dataref = export_float_dataref("enhanced_cloudscapes/rendering_resolution_ratio", 0.75f);
+		rendering_resolution_ratio_dataref = export_float_dataref("enhanced_cloudscapes/rendering_resolution_ratio", 0.66f);
 		skip_fragments_dataref = export_int_dataref("enhanced_cloudscapes/skip_fragments", 0);
 
 		reverse_z_dataref = XPLMFindDataRef("sim/graphics/view/is_reverse_float_z");
@@ -195,7 +195,7 @@ namespace simulator_objects
 		cloud_coverage_datarefs[3] = export_float_dataref("enhanced_cloudscapes/overcast/coverage", 0.95f);
 		cloud_coverage_datarefs[4] = export_float_dataref("enhanced_cloudscapes/stratus/coverage", 1.0f);
 
-		cloud_density_datarefs[0] = export_float_dataref("enhanced_cloudscapes/cirrus/density_multiplier", 0.00055);
+		cloud_density_datarefs[0] = export_float_dataref("enhanced_cloudscapes/cirrus/density_multiplier", 0.002); // 0.00055);
 		cloud_density_datarefs[1] = export_float_dataref("enhanced_cloudscapes/scattered/density_multiplier", 0.0035);
 		cloud_density_datarefs[2] = export_float_dataref("enhanced_cloudscapes/broken/density_multiplier", 0.004);
 		cloud_density_datarefs[3] = export_float_dataref("enhanced_cloudscapes/overcast/density_multiplier", 0.004);
