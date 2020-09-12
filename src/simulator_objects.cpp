@@ -9,6 +9,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <XPLMDisplay.h>
+#include <XPLMutilities.h>
+#include <MoonPhase.hpp>
 
 #define WIND_LAYER_COUNT 3
 
@@ -85,6 +87,10 @@ namespace simulator_objects
 	XPLMDataRef fog_be_gone_dataref;
 	XPLMDataRef bicubic_sampling_dataref;
 
+	XPLMDataRef day_numeric_dataref;
+	XPLMDataRef month_numeric_dataref;
+	XPLMDataRef moon_phase_dataref;
+
 	float previous_zulu_time;
 	float current_zulu_time;
 
@@ -150,6 +156,14 @@ namespace simulator_objects
 	float atmospheric_blending;
 	float fog_be_gone;
 	int bicubic_sampling;
+
+	int day_numeric;
+	int month_numeric;
+	int check_day_numeric;
+	int check_month_numeric;
+	int year_numeric = 2020;		// need to set to system year
+	float moon_phase;
+	int moon_phase_percent;
 
 	void initialize()
 	{
@@ -233,9 +247,7 @@ namespace simulator_objects
 		moon_heading_dataref = XPLMFindDataRef("sim/graphics/scenery/moon_heading_degrees");
 
 		sun_gain_dataref = export_float_dataref("enhanced_cloudscapes/sun_gain", 2.5f);
-		
-		moon_gain_dataref = export_float_dataref("enhanced_cloudscapes/moon_gain", 15.0f);
-		moon_glow_dataref = export_float_dataref("enhanced_cloudscapes/moon_glow", 0.6f);
+		moon_gain_dataref = export_float_dataref("enhanced_cloudscapes/moon_gain", 1.0f);
 
 		ambient_tint_red_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_r");
 		ambient_tint_green_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_g");
@@ -253,8 +265,19 @@ namespace simulator_objects
 
 		bicubic_sampling_dataref = export_int_dataref("enhanced_cloudscapes/bicubic_sampling", 0);
 
-		fog_be_gone_dataref = XPLMFindDataRef("sim/private/controls/fog/fog_be_gone");
-		XPLMSetDataf(fog_be_gone_dataref, 0.25f);
+		day_numeric_dataref = XPLMFindDataRef("sim/cockpit2/clock_timer/current_day");
+		month_numeric_dataref = XPLMFindDataRef("sim/cockpit2/clock_timer/current_month");
+		day_numeric = XPLMGetDatai(day_numeric_dataref);
+		month_numeric = XPLMGetDatai(month_numeric_dataref);
+		check_day_numeric = XPLMGetDatai(day_numeric_dataref);
+		check_month_numeric = XPLMGetDatai(month_numeric_dataref);
+		moon_phase = MoonPhase::GetPhase(day_numeric, month_numeric, year_numeric);
+		moon_phase_dataref = export_float_dataref("enhanced_cloudscapes/moon_phase", moon_phase);
+		moon_phase_percent = MoonPhase::GetPercentage(moon_phase);
+		moon_glow_dataref = export_int_dataref("enhanced_cloudscapes/moon_glow", moon_phase_percent);
+
+//		fog_be_gone_dataref = XPLMFindDataRef("sim/private/controls/fog/fog_be_gone");
+//		XPLMSetDataf(fog_be_gone_dataref, 0.25f);
 
 	}
 
@@ -400,6 +423,19 @@ namespace simulator_objects
 
 		atmospheric_blending = XPLMGetDataf(atmospheric_blending_dataref);
 		bicubic_sampling = XPLMGetDatai(bicubic_sampling_dataref);
+
+		day_numeric = XPLMGetDatai(day_numeric_dataref);
+		month_numeric = XPLMGetDatai(month_numeric_dataref);
+		if (check_day_numeric != day_numeric || check_month_numeric != month_numeric)
+		{
+		check_day_numeric = day_numeric;
+		check_month_numeric = month_numeric;
+		moon_phase = MoonPhase::GetPhase(month_numeric, day_numeric, year_numeric);
+		XPLMSetDataf(moon_phase_dataref, moon_phase);
+
+		moon_phase_percent = MoonPhase::GetPercentage(moon_phase);
+		XPLMSetDatai(moon_glow_dataref, moon_phase_percent);
+		}
 
 	}
 }

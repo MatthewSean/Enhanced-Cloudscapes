@@ -21,7 +21,7 @@ set(LIBPNG_LIBRARY_FILE "" CACHE FILEPATH "libpng library file")
 
 set(GLM_INCLUDE_DIRECTORY "" CACHE PATH "GLM include directory")
 
-add_library(enhanced_cloudscapes SHARED "include/dataref_helpers.hpp" "include/opengl_helpers.hpp" "include/simulator_objects.hpp" "include/plugin_objects.hpp" "include/rendering_program.hpp" "include/post_processing_program.hpp" "src/dataref_helpers.cpp" "src/opengl_helpers.cpp" "src/simulator_objects.cpp" "src/plugin_objects.cpp" "src/rendering_program.cpp" "src/post_processing_program.cpp" "src/enhanced_cloudscapes.cpp")
+add_library(enhanced_cloudscapes SHARED "include/dataref_helpers.hpp" "include/opengl_helpers.hpp" "include/simulator_objects.hpp" "include/plugin_objects.hpp" "include/rendering_program.hpp" "include/post_processing_program.hpp" "src/dataref_helpers.cpp" "src/opengl_helpers.cpp" "src/simulator_objects.cpp" "src/plugin_objects.cpp" "src/rendering_program.cpp" "src/post_processing_program.cpp" "src/enhanced_cloudscapes.cpp" "include/MoonPhase.hpp" "src/MoonPhase.cpp")
 
 target_include_directories(enhanced_cloudscapes PRIVATE "include" ${XPLM_SDK_INCLUDE_DIRECTORY} ${GLEW_INCLUDE_DIRECTORY} ${ZLIB_INCLUDE_DIRECTORY} ${LIBPNG_INCLUDE_DIRECTORY} ${GLM_INCLUDE_DIRECTORY})
 target_link_libraries(enhanced_cloudscapes PRIVATE ${XPLM_SDK_LIBRARY_FILE} OpenGL::GL ${GLEW_LIBRARY_FILE} ${ZLIB_LIBRARY_FILE} ${LIBPNG_LIBRARY_FILE})

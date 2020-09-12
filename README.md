@@ -19,3 +19,7 @@ Changes:
 11/09/2020
 1: small changes again to nightlighting.
 2: changed density of cirrus clouds. (personal pref).
+
+12/09/2020
+1: Added moon_phase calc for full moon tracking, and surface percentage figure.
+2: Changes to render frag_shader.

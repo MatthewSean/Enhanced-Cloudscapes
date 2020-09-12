@@ -3,9 +3,9 @@
 #define EARTH_RADIUS 6378100.0
 #define EARTH_CENTER vec3(0.0, -1.0 * EARTH_RADIUS, 0.0)
 
-#define SAMPLE_STEP_COUNT 64
+#define SAMPLE_STEP_COUNT 32
 #define SUN_STEP_COUNT 6
-#define MOON_STEP_COUNT 6
+#define MOON_STEP_COUNT 3
 
 #define MAXIMUM_SAMPLE_STEP_SIZE 128.0
 
@@ -113,7 +113,7 @@ float sample_clouds(in vec3 ray_position, in int cloud_layer_index)
 	else cloud_map_sample.y = map(cloud_map_sample.y, 0.0, 1.0, 0.625, 1.0);
 
 	float height_ratio = get_height_ratio(ray_position, cloud_layer_index);
-	float height_multiplier = min(map(height_ratio, 0.0, 0.125, 0.0, 1.0), map(height_ratio, 0.625 * cloud_map_sample.y, cloud_map_sample.y, 0.9, 0.0));
+	float height_multiplier = min(map(height_ratio, 0.0, 0.125, 0.0, 1.0), map(height_ratio, 0.625 * cloud_map_sample.y, cloud_map_sample.y*2, 0.9, 0.0));
 
 	float base_erosion = map(base_noise * height_multiplier, 1.0 - max(cloud_map_sample.x, cloud_coverages[cloud_types[cloud_layer_index] - 1]), 1.0, 0.0, 1.0);
 
@@ -308,7 +308,7 @@ vec4 sample_ray_march(in vec4 input_color, in int cloud_layer_index)
 					}
 
 					vec3 sun_color = sun_tint * sun_gain * mie_scattering_gain * sun_attenuation * sun_angle_multiplier;
-					vec3 moon_color = sun_tint * moon_gain * moon_glow * mie_scattering_gain * moon_attenuation * moon_angle_multiplier;
+					vec3 moon_color = sun_tint * moon_gain * mie_scattering_gain * moon_attenuation * moon_angle_multiplier * moon_glow;
 					vec3 ambient_color = mix(ambient_tint, mix(atmosphere_bottom_tint, atmosphere_top_tint, get_height_ratio(current_ray_position, cloud_layer_index)) * dot(ambient_tint, vec3(0.21, 0.72, 0.07)), atmospheric_blending) * ambient_gain * sun_angle_multiplier * moon_angle_multiplier;
 
 					vec3 sample_color = (ambient_color + sun_color + moon_color) * cloud_sample * current_step_size;
@@ -316,7 +316,7 @@ vec4 sample_ray_march(in vec4 input_color, in int cloud_layer_index)
 
 					output_color.xyz += sample_color * output_color.w;
 					output_color.w *= sample_transmittance;
-					if (output_color.w < 0.05) break;
+					if (output_color.w < 0.01) break;
                   
 				}
 				current_ray_position += ray_direction * current_step_size;
