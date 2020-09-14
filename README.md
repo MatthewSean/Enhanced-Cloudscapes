@@ -23,3 +23,10 @@ Changes:
 12/09/2020
 1: Added moon_phase calc for full moon tracking, and surface percentage figure.
 2: Changes to render frag_shader.
+
+13/09/2020:
+1: Fixed moon lighting (sent shader int value, when it need float. Should have tested, instead of going to bed).
+2: changed some stepsize params.
+3: testing averaging the time_difference calc to fix the cloud jump at midnight.
+
+todo: moon_heading <70deg || >280deg minimise glow

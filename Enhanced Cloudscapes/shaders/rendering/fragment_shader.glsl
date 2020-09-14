@@ -224,7 +224,7 @@ float sun_ray_march(in float input_transmittance, in vec3 ray_position, in int c
 			float cloud_sample = sample_clouds(current_ray_position, cloud_layer_index);
 
 			output_transmittance *= exp(-1.0 * cloud_sample * step_size);
-			if (output_transmittance < 0.01) break;
+			if (output_transmittance < 0.05) break;
 
 			current_ray_position += sun_direction * step_size;
 		}
@@ -248,7 +248,7 @@ float moon_ray_march(in float input_transmittance, in vec3 ray_position, in int 
 			float cloud_sample = sample_clouds(current_ray_position, cloud_layer_index);
 
 			output_transmittance *= exp(-1.0 * cloud_sample * step_size);
-			if (output_transmittance < 0.01) break;
+			if (output_transmittance < 0.05) break;
 
 			current_ray_position += moon_direction * step_size;
 		}
@@ -308,7 +308,7 @@ vec4 sample_ray_march(in vec4 input_color, in int cloud_layer_index)
 					}
 
 					vec3 sun_color = sun_tint * sun_gain * mie_scattering_gain * sun_attenuation * sun_angle_multiplier;
-					vec3 moon_color = sun_tint * moon_gain * mie_scattering_gain * moon_attenuation * moon_angle_multiplier * moon_glow;
+					vec3 moon_color = sun_tint * moon_gain * moon_glow * mie_scattering_gain * moon_attenuation; //* moon_angle_multiplier;
 					vec3 ambient_color = mix(ambient_tint, mix(atmosphere_bottom_tint, atmosphere_top_tint, get_height_ratio(current_ray_position, cloud_layer_index)) * dot(ambient_tint, vec3(0.21, 0.72, 0.07)), atmospheric_blending) * ambient_gain * sun_angle_multiplier * moon_angle_multiplier;
 
 					vec3 sample_color = (ambient_color + sun_color + moon_color) * cloud_sample * current_step_size;
@@ -316,7 +316,7 @@ vec4 sample_ray_march(in vec4 input_color, in int cloud_layer_index)
 
 					output_color.xyz += sample_color * output_color.w;
 					output_color.w *= sample_transmittance;
-					if (output_color.w < 0.01) break;
+					if (output_color.w < 0.05) break;
                   
 				}
 				current_ray_position += ray_direction * current_step_size;
