@@ -393,7 +393,9 @@ namespace simulator_objects
 
 		float time_difference = current_zulu_time - previous_zulu_time;
 
-		if (time_difference > 10.0 || time_difference < -10.0)
+		if (time_difference < -3601.0) time_difference = fabs(time_difference);
+
+		if (time_difference > 5.0 && time_difference < 3600.0 || time_difference < -5.0)
 		{
 			time_accelerated = 1;
 		}
@@ -407,6 +409,7 @@ namespace simulator_objects
 		{
 			if(combined_count < sample_count-1)
 			{
+				if (time_difference > 3600.0) time_difference = time_difference_average;
 				combined_count++;
 				time_difference_combined[combined_count] = time_difference;
 				for (int i = 0; i < sample_count; i++)time_difference_average += time_difference_combined[i];
