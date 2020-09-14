@@ -89,16 +89,19 @@ namespace simulator_objects
 	XPLMDataRef day_numeric_dataref;
 	XPLMDataRef month_numeric_dataref;
 	XPLMDataRef moon_phase_dataref;
+
 	XPLMDataRef matts_fdebug_dataref;
 	XPLMDataRef matts_idebug_dataref;
 
 	float previous_zulu_time;
 	float current_zulu_time;
+
 	const int sample_count = 50;
 	float time_difference_combined[sample_count];
 	float time_difference_average;
 	int initial_sample_done;
 	int combined_count;
+	int time_accelerated;
 
 	int version;
 
@@ -281,11 +284,11 @@ namespace simulator_objects
 		moon_phase_dataref = export_float_dataref("enhanced_cloudscapes/moon_phase", moon_phase);
 		moon_phase_percent = MoonPhase::GetPercentage(moon_phase);
 		moon_glow_dataref = export_float_dataref("enhanced_cloudscapes/moon_glow", moon_phase_percent);
+
 		matts_fdebug_dataref = export_float_dataref("matts_debug/float_debug", 0);
 		matts_idebug_dataref = export_int_dataref("matts_debug/int_debug", 0);
 
-//		fog_be_gone_dataref = XPLMFindDataRef("sim/private/controls/fog/fog_be_gone");
-//		XPLMSetDataf(fog_be_gone_dataref, 0.25f);
+		for (int a = 0; a < sample_count; a++) time_difference_combined[a] = 0.0303f;
 
 	}
 
@@ -389,26 +392,32 @@ namespace simulator_objects
 		current_zulu_time = XPLMGetDataf(zulu_time_dataref);
 
 		float time_difference = current_zulu_time - previous_zulu_time;
-		if (!initial_sample_done)	//dummy run
-		{
-			for (int a = 0; a < sample_count; a++) time_difference_combined[a] = 0.0303f;
-			initial_sample_done = 1;
-		}
 
-		if (combined_count < sample_count-1)
+		if (time_difference > 10.0 || time_difference < -10.0)
 		{
-			combined_count++;
-			if (time_difference > 10.0 || time_difference < -10.0) time_difference /= 1000;
-			time_difference_combined[combined_count] = time_difference;
-			for (int i = 0; i < sample_count; i++)time_difference_average += time_difference_combined[i];
-			time_difference_average /= sample_count;
+			time_accelerated = 1;
 		}
 		else
 		{
-			initial_sample_done = 1;
-			combined_count = 0;
+			time_accelerated = 0;
 		}
-		
+			
+
+		if (!time_accelerated)
+		{
+			if(combined_count < sample_count-1)
+			{
+				combined_count++;
+				time_difference_combined[combined_count] = time_difference;
+				for (int i = 0; i < sample_count; i++)time_difference_average += time_difference_combined[i];
+				time_difference_average /= sample_count;
+			}
+			else
+			{
+				combined_count = 0;
+			}
+		}
+
 		XPLMSetDataf(matts_fdebug_dataref, time_difference_average);
 		XPLMSetDatai(matts_idebug_dataref, combined_count);
 
@@ -416,8 +425,14 @@ namespace simulator_objects
 		{
 			for (int wind_layer_index = 0; wind_layer_index < WIND_LAYER_COUNT; wind_layer_index++) wind_offsets[cloud_layer_index] += wind_vectors[wind_layer_index] * glm::clamp(glm::pow(glm::abs(cloud_bases[cloud_layer_index] - wind_altitudes[wind_layer_index]) * 0.001f, 2.0f), 0.0f, 1.0f) * time_difference;
 
-			//if(time accelerated use time_difference not avg);
-			wind_offsets[cloud_layer_index].y += 0.05 * time_difference_average ;
+			if (!time_accelerated)
+			{
+				wind_offsets[cloud_layer_index].y += 0.05 * time_difference_average;
+			}
+			else
+			{
+				wind_offsets[cloud_layer_index].y += 0.05 * time_difference;
+			}
 		}
 
 		XPLMDataRef fade_start_distance_dataref = XPLMFindDataRef("sim/private/stats/skyc/fog/near_fog_cld");

@@ -28,5 +28,6 @@ Changes:
 1: Fixed moon lighting (sent shader int value, when it need float. Should have tested, instead of going to bed).
 2: changed some stepsize params.
 3: testing averaging the time_difference calc to fix the cloud jump at midnight.
+4: testing for time_up_lots etc. Use avg unless time_up_lots.
 
 todo: moon_heading <70deg || >280deg minimise glow
