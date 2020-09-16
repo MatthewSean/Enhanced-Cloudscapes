@@ -13,6 +13,7 @@ namespace post_processing_program
 
 	GLint near_clip_z;
 	GLint bicubic_sampling;
+	GLint sample_pattern;
 
 	void initialize()
 	{
@@ -27,6 +28,7 @@ namespace post_processing_program
 
 		near_clip_z = glGetUniformLocation(reference, "near_clip_z");
 		bicubic_sampling = glGetUniformLocation(reference, "bicubic_sampling");
+		sample_pattern = glGetUniformLocation(reference, "sample_pattern");
 
 		glUseProgram(EMPTY_OBJECT);
 	}
@@ -44,6 +46,7 @@ namespace post_processing_program
 
 		glUniform1f(near_clip_z, simulator_objects::near_clip_z);
 		glUniform1i(bicubic_sampling, simulator_objects::bicubic_sampling);
+		glUniform1i(sample_pattern, simulator_objects::sample_pattern);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 

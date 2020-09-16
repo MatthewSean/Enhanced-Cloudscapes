@@ -12,6 +12,7 @@ layout(location = 0) out vec4 fragment_color;
 #define CONSTANT_5 0.14
 
 uniform int bicubic_sampling;
+uniform int sample_pattern;
 
 vec3 tone_mapping(vec3 input_color)
 {
@@ -19,7 +20,7 @@ vec3 tone_mapping(vec3 input_color)
 }
 
 // Catmull-Rom spline actually passes through control points
-vec4 cubic(float x) // cubic_catmullrom(float x)
+vec4 catmull(float x) // cubic_catmullrom(float x)
 {
     const float s = 0.5; // potentially adjustable parameter
     float x2 = x * x;
@@ -32,9 +33,22 @@ vec4 cubic(float x) // cubic_catmullrom(float x)
     return w;
 }
 
+vec4 cubic(float v)
+{
+    vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;
+    vec4 s = n * n * n;
+    float x = s.x;
+    float y = s.y - 4.0 * s.x;
+    float z = s.z - 4.0 * s.y + 6.0 * s.x;
+    float w = 6.0 - x - y - z;
+    return vec4(x, y, z, w);
+}
+
 vec4 textureBicubic(sampler2D sampler, vec2 texCoords)
 {
 
+    vec4 xcubic;
+    vec4 ycubic;
 	vec2 texSize = textureSize(sampler, 0);
 	vec2 invTexSize = 1.0 / texSize;
 	texCoords = texCoords * texSize - 0.5;
@@ -42,8 +56,16 @@ vec4 textureBicubic(sampler2D sampler, vec2 texCoords)
     vec2 fxy = fract(texCoords);
     texCoords -= fxy;
 
-    vec4 xcubic = cubic(fxy.x);
-    vec4 ycubic = cubic(fxy.y);
+    if(sample_pattern != 1)
+    {
+    xcubic = catmull(fxy.x);
+    ycubic = catmull(fxy.y);
+    }
+    else
+    {
+    xcubic = cubic(fxy.x);
+    ycubic = cubic(fxy.y);
+    }
 
     vec4 c = texCoords.xxyy + vec2 (-0.5, +1.5).xyxy;
 

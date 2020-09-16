@@ -8,11 +8,11 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <XPLMDisplay.h>
-#include <XPLMutilities.h>
+#include <XPLMUtilities.h>
 #include <MoonPhase.hpp>
 
 #define WIND_LAYER_COUNT 3
-
+#define sample_count 50
 #define MPS_PER_KNOTS 0.514444444f
 
 namespace simulator_objects
@@ -58,16 +58,12 @@ namespace simulator_objects
 	
 	XPLMDataRef sun_pitch_dataref;
 	XPLMDataRef sun_heading_dataref;
-	XPLMDataRef moon_pitch_dataref;
-	XPLMDataRef moon_heading_dataref;
 
 	XPLMDataRef sun_tint_red_dataref;
 	XPLMDataRef sun_tint_green_dataref;
 	XPLMDataRef sun_tint_blue_dataref;
 
 	XPLMDataRef sun_gain_dataref;
-	XPLMDataRef moon_gain_dataref;
-	XPLMDataRef moon_glow_dataref;
 
 	XPLMDataRef ambient_tint_red_dataref;
 	XPLMDataRef ambient_tint_green_dataref;
@@ -82,26 +78,29 @@ namespace simulator_objects
 	XPLMDataRef atmosphere_top_tint_dataref;
 
 	XPLMDataRef atmospheric_blending_dataref;
-	
-	XPLMDataRef fog_be_gone_dataref;
+
+	//******************
+	//	My datarefs
+	//
+
 	XPLMDataRef bicubic_sampling_dataref;
+	XPLMDataRef sample_pattern_dataref;
+
+	XPLMDataRef moon_pitch_dataref;
+	XPLMDataRef moon_heading_dataref;
+
+	XPLMDataRef moon_gain_dataref;
+	XPLMDataRef moon_glow_dataref;
 
 	XPLMDataRef day_numeric_dataref;
 	XPLMDataRef month_numeric_dataref;
 	XPLMDataRef moon_phase_dataref;
 
-	XPLMDataRef matts_fdebug_dataref;
-	XPLMDataRef matts_idebug_dataref;
+	//XPLMDataRef matts_fdebug_dataref;
+	//XPLMDataRef matts_idebug_dataref;
 
 	float previous_zulu_time;
 	float current_zulu_time;
-
-	const int sample_count = 50;
-	float time_difference_combined[sample_count];
-	float time_difference_average;
-	int initial_sample_done;
-	int combined_count;
-	int time_accelerated;
 
 	int version;
 
@@ -146,12 +145,8 @@ namespace simulator_objects
 	float fade_end_distance;
 
 	glm::vec3 sun_direction;
-	glm::vec3 moon_direction;
-
 	glm::vec3 sun_tint;
 	float sun_gain;
-	float moon_gain;
-	float moon_glow;
 
 	glm::vec3 ambient_tint;
 	float ambient_gain;
@@ -163,8 +158,23 @@ namespace simulator_objects
 	glm::vec3 atmosphere_top_tint;
 
 	float atmospheric_blending;
-	float fog_be_gone;
+
+	//***************************
+	//		my variables
+	//
+
 	int bicubic_sampling;
+	int sample_pattern;
+
+	float time_difference_combined[sample_count];
+	float time_difference_average;
+	int initial_sample_done;
+	int combined_count;
+	int time_accelerated;
+
+	glm::vec3 moon_direction;
+	float moon_gain;
+	float moon_glow;
 
 	int day_numeric;
 	int month_numeric;
@@ -252,11 +262,8 @@ namespace simulator_objects
 
 		sun_pitch_dataref = XPLMFindDataRef("sim/graphics/scenery/sun_pitch_degrees");
 		sun_heading_dataref = XPLMFindDataRef("sim/graphics/scenery/sun_heading_degrees");
-		moon_pitch_dataref = XPLMFindDataRef("sim/graphics/scenery/moon_pitch_degrees");
-		moon_heading_dataref = XPLMFindDataRef("sim/graphics/scenery/moon_heading_degrees");
 
 		sun_gain_dataref = export_float_dataref("enhanced_cloudscapes/sun_gain", 2.5f);
-		moon_gain_dataref = export_float_dataref("enhanced_cloudscapes/moon_gain", 2.0f);
 
 		ambient_tint_red_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_r");
 		ambient_tint_green_dataref = XPLMFindDataRef("sim/graphics/misc/outside_light_level_g");
@@ -272,12 +279,22 @@ namespace simulator_objects
 
 		atmospheric_blending_dataref = export_float_dataref("enhanced_cloudscapes/atmospheric_blending", 0.45f);
 
-		bicubic_sampling_dataref = export_int_dataref("enhanced_cloudscapes/bicubic_sampling", 0);
+		//******************************************************************
+		//	My data refs creation/load
+		//
+
+		bicubic_sampling_dataref = export_int_dataref("enhanced_cloudscapes/bicubic_sampling", 0);		
+		sample_pattern_dataref = export_int_dataref("enhanced_cloudscapes/bicubic_sample_pattern", 0);
 
 		day_numeric_dataref = XPLMFindDataRef("sim/cockpit2/clock_timer/current_day");
 		month_numeric_dataref = XPLMFindDataRef("sim/cockpit2/clock_timer/current_month");
 		day_numeric = XPLMGetDatai(day_numeric_dataref);
 		month_numeric = XPLMGetDatai(month_numeric_dataref);
+		
+		moon_pitch_dataref = XPLMFindDataRef("sim/graphics/scenery/moon_pitch_degrees");
+		moon_heading_dataref = XPLMFindDataRef("sim/graphics/scenery/moon_heading_degrees");
+		moon_gain_dataref = export_float_dataref("enhanced_cloudscapes/moon_gain", 1.0f);
+
 		check_day_numeric = XPLMGetDatai(day_numeric_dataref);
 		check_month_numeric = XPLMGetDatai(month_numeric_dataref);
 		moon_phase = MoonPhase::GetPhase(day_numeric, month_numeric, year_numeric);
@@ -285,10 +302,11 @@ namespace simulator_objects
 		moon_phase_percent = MoonPhase::GetPercentage(moon_phase);
 		moon_glow_dataref = export_float_dataref("enhanced_cloudscapes/moon_glow", moon_phase_percent);
 
-		matts_fdebug_dataref = export_float_dataref("matts_debug/float_debug", 0);
-		matts_idebug_dataref = export_int_dataref("matts_debug/int_debug", 0);
+		//matts_fdebug_dataref = export_float_dataref("matts_debug/float_debug", 0);					
+		//matts_idebug_dataref = export_int_dataref("matts_debug/int_debug", 0);
 
-		for (int a = 0; a < sample_count; a++) time_difference_combined[a] = 0.0303f;
+		for (int a = 0; a < sample_count; a++) time_difference_combined[a] = 0.0303f;		// preload average array with 33fps average stops clouds dancing at startup
+																							// becaue first load give previous time_diff = 0; current time_diff >3600.00 
 
 	}
 
@@ -393,15 +411,16 @@ namespace simulator_objects
 
 		float time_difference = current_zulu_time - previous_zulu_time;
 
-		if (time_difference < -3601.0) time_difference = fabs(time_difference);
+		if (time_difference < -3601.0) time_difference = fabs(time_difference);				// 1 hour in secs, once time crosses midnight the value should be about -86400.0 ish
+																							// so if time diff > than neg hour convert to positive value (as logic on a negative does my head in).
 
-		if (time_difference > 5.0 && time_difference < 3600.0 || time_difference < -5.0)
+		if (time_difference > 5.0 && time_difference < 3600.0 || time_difference < -5.0)	// between 5sec to 1 hour or greater than -5 secs
 		{
-			time_accelerated = 1;
+			time_accelerated = 1;															// set accelerated time true, which stops the use of averaged time_diff
 		}
 		else
 		{
-			time_accelerated = 0;
+			time_accelerated = 0;															// back to averaged time_diff
 		}
 			
 
@@ -409,32 +428,33 @@ namespace simulator_objects
 		{
 			if(combined_count < sample_count-1)
 			{
-				if (time_difference > 3600.0) time_difference = time_difference_average;
-				combined_count++;
+				if (time_difference > 3600.0) time_difference = time_difference_average;	// if time jumps gt 1 hour use the averaged time, stops clouds jumping at midnight.
+				combined_count++;															// next 4 lines create a running average
 				time_difference_combined[combined_count] = time_difference;
 				for (int i = 0; i < sample_count; i++)time_difference_average += time_difference_combined[i];
 				time_difference_average /= sample_count;
 			}
 			else
 			{
-				combined_count = 0;
+				combined_count = 0;															// once the array is full, reset and start again overwriting previous values at array pos count.
 			}
 		}
 
-		XPLMSetDataf(matts_fdebug_dataref, time_difference_average);
-		XPLMSetDatai(matts_idebug_dataref, combined_count);
+		//XPLMSetDataf(matts_fdebug_dataref, time_difference_average);						// My debug use.
+		//XPLMSetDatai(matts_idebug_dataref, combined_count);								//		"
+
 
 		for (int cloud_layer_index = 0; cloud_layer_index < CLOUD_LAYER_COUNT; cloud_layer_index++)
 		{
 			for (int wind_layer_index = 0; wind_layer_index < WIND_LAYER_COUNT; wind_layer_index++) wind_offsets[cloud_layer_index] += wind_vectors[wind_layer_index] * glm::clamp(glm::pow(glm::abs(cloud_bases[cloud_layer_index] - wind_altitudes[wind_layer_index]) * 0.001f, 2.0f), 0.0f, 1.0f) * time_difference;
 
-			if (!time_accelerated)
+			if (!time_accelerated)															// If time is not accelerated use the average, else use std time_diff
 			{
 				wind_offsets[cloud_layer_index].y += 0.05 * time_difference_average;
 			}
 			else
 			{
-				wind_offsets[cloud_layer_index].y += 0.05 * time_difference;
+				wind_offsets[cloud_layer_index].y += 0.05 * time_difference;				// When the keys K/k or L/l are used to accelerate time.
 			}
 		}
 
@@ -446,8 +466,8 @@ namespace simulator_objects
 
 		float sun_pitch = glm::radians(XPLMGetDataf(sun_pitch_dataref));
 		float sun_heading = glm::radians(XPLMGetDataf(sun_heading_dataref));
-		float moon_pitch = glm::radians(XPLMGetDataf(moon_pitch_dataref));
-		float moon_heading = glm::radians(XPLMGetDataf(moon_heading_dataref));
+		float moon_pitch = glm::radians(XPLMGetDataf(moon_pitch_dataref));					// For moonlight improvements
+		float moon_heading = glm::radians(XPLMGetDataf(moon_heading_dataref));				//			"
 
 		sun_direction = glm::vec3(glm::cos(sun_pitch) * glm::sin(sun_heading), glm::sin(sun_pitch), -1.0f * glm::cos(sun_pitch) * glm::cos(sun_heading));
 		moon_direction = glm::vec3(glm::cos(moon_pitch) * glm::sin(moon_heading), glm::sin(moon_pitch), -1.0f * glm::cos(moon_pitch) * glm::cos(moon_heading));
@@ -458,7 +478,7 @@ namespace simulator_objects
 
 		sun_tint = glm::vec3(XPLMGetDataf(sun_tint_red_dataref), XPLMGetDataf(sun_tint_green_dataref), XPLMGetDataf(sun_tint_blue_dataref));
 		sun_gain = XPLMGetDataf(sun_gain_dataref);
-		moon_gain = XPLMGetDataf(moon_gain_dataref);
+		moon_gain = XPLMGetDataf(moon_gain_dataref);										
 		moon_glow = XPLMGetDataf(moon_glow_dataref);
 
 		ambient_tint = glm::vec3(XPLMGetDataf(ambient_tint_red_dataref), XPLMGetDataf(ambient_tint_green_dataref), XPLMGetDataf(ambient_tint_blue_dataref));
@@ -471,19 +491,21 @@ namespace simulator_objects
 		XPLMGetDatavf(atmosphere_top_tint_dataref, glm::value_ptr(atmosphere_top_tint), 0, atmosphere_top_tint.length());
 
 		atmospheric_blending = XPLMGetDataf(atmospheric_blending_dataref);
+		
 		bicubic_sampling = XPLMGetDatai(bicubic_sampling_dataref);
+		sample_pattern = XPLMGetDatai(sample_pattern_dataref);									// 0=catmull rom, 1=cubic
 
-		day_numeric = XPLMGetDatai(day_numeric_dataref);
-		month_numeric = XPLMGetDatai(month_numeric_dataref);
-		if (check_day_numeric != day_numeric || check_month_numeric != month_numeric)
-		{
-		check_day_numeric = day_numeric;
-		check_month_numeric = month_numeric;
-		moon_phase = MoonPhase::GetPhase(month_numeric, day_numeric, year_numeric);
-		XPLMSetDataf(moon_phase_dataref, moon_phase);
+		day_numeric = XPLMGetDatai(day_numeric_dataref);										// Get day
+		month_numeric = XPLMGetDatai(month_numeric_dataref);									// Get month
+		if (check_day_numeric != day_numeric || check_month_numeric != month_numeric)			// compare to ones created in init 
+		{																						// If changed 
+		check_day_numeric = day_numeric;														// reset check
+		check_month_numeric = month_numeric;													//		"
+		moon_phase = MoonPhase::GetPhase(month_numeric, day_numeric, year_numeric);				// Get new moon phase
+		XPLMSetDataf(moon_phase_dataref, moon_phase);											// load the dataref
 
-		moon_phase_percent = MoonPhase::GetPercentage(moon_phase);
-		XPLMSetDataf(moon_glow_dataref, moon_phase_percent);
+		moon_phase_percent = MoonPhase::GetPercentage(moon_phase);								// get the new percent
+		XPLMSetDataf(moon_glow_dataref, moon_phase_percent);									// load the dataref.
 		}
 
 	}

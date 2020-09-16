@@ -32,5 +32,14 @@ Changes:
 1: testing averaging the time_difference calc to fix the cloud jump at midnight.
 2: testing for time_up_lots etc. Use avg unless time_up_lots.
 3: Fully fixed cloud jump, and can still use "shift + L/K" for time advance. 
+4: tidy up a bit, and comments for the added code.
 
-todo: moon_heading <70deg || >280deg minimise glow
+16/09/2020
+1: Added a standard bicubic sample pattern for testing (FPS/Quality) catmull rom is still the default.
+   sample_pattern	= 0 catmull.
+					= 1 std bicubic.
+   May add more sample patterns.
+
+todo: 
+change moon calc to midday to stop jump in glow.
+Add widget interface??
